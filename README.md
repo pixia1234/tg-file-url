@@ -76,7 +76,8 @@ docker run --rm -p 8080:8080 --env-file config.env tg-file-url
 cp compose.env.example compose.env
 # edit compose.env
 
-docker-compose up -d --build
+docker-compose pull
+docker-compose up -d
 ```
 
 Service:

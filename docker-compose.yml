@@ -2,9 +2,7 @@ version: "3.3"
 
 services:
   tg-file-url:
-    build:
-      context: .
-      dockerfile: Dockerfile
+    image: pixia1234/tg-file-url:latest
     container_name: tg-file-url
     restart: unless-stopped
     env_file:
