@@ -1,0 +1,15 @@
+version: "3.3"
+
+services:
+  tg-file-url:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: tg-file-url
+    restart: unless-stopped
+    env_file:
+      - ./compose.env
+    volumes:
+      - ./data:/app/data
+    ports:
+      - "8080:8080"

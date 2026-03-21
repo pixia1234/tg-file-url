@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{.FileName}}</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f4efe6;
+      --paper: rgba(255, 252, 247, 0.88);
+      --ink: #1f1a17;
+      --muted: #6b5f57;
+      --line: rgba(31, 26, 23, 0.12);
+      --accent: #b34c2a;
+      --accent-strong: #8a3418;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "IBM Plex Sans", "Segoe UI", sans-serif;
+      background:
+        radial-gradient(circle at top left, rgba(179, 76, 42, 0.22), transparent 28%),
+        radial-gradient(circle at bottom right, rgba(31, 26, 23, 0.12), transparent 24%),
+        linear-gradient(135deg, #f6f0e8 0%, #ede4d7 100%);
+      color: var(--ink);
+      display: grid;
+      place-items: center;
+      padding: 24px;
+    }
+    main {
+      width: min(920px, 100%);
+      background: var(--paper);
+      border: 1px solid var(--line);
+      border-radius: 28px;
+      backdrop-filter: blur(18px);
+      box-shadow: 0 20px 60px rgba(31, 26, 23, 0.12);
+      overflow: hidden;
+    }
+    .hero {
+      padding: 32px;
+      border-bottom: 1px solid var(--line);
+    }
+    .eyebrow {
+      margin: 0 0 12px;
+      color: var(--accent-strong);
+      font-size: 12px;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      font-weight: 700;
+    }
+    h1 {
+      margin: 0;
+      font-size: clamp(28px, 4vw, 44px);
+      line-height: 1.05;
+      word-break: break-word;
+    }
+    .meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 16px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+    .pill {
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 8px 12px;
+      background: rgba(255, 255, 255, 0.7);
+    }
+    .content {
+      padding: 32px;
+      display: grid;
+      gap: 20px;
+    }
+    .viewer {
+      border-radius: 22px;
+      background: #1f1a17;
+      min-height: 240px;
+      display: grid;
+      place-items: center;
+      overflow: hidden;
+    }
+    .viewer video,
+    .viewer audio,
+    .viewer img {
+      display: block;
+      max-width: 100%;
+      width: 100%;
+    }
+    .fallback {
+      padding: 36px;
+      color: #f4efe6;
+      text-align: center;
+      line-height: 1.6;
+    }
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    .button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 48px;
+      padding: 0 18px;
+      border-radius: 999px;
+      text-decoration: none;
+      font-weight: 700;
+      transition: transform 140ms ease, background 140ms ease;
+    }
+    .button:hover {
+      transform: translateY(-1px);
+    }
+    .button-primary {
+      background: var(--accent);
+      color: #fff;
+    }
+    .button-secondary {
+      background: transparent;
+      color: var(--ink);
+      border: 1px solid var(--line);
+    }
+    @media (max-width: 640px) {
+      .hero, .content {
+        padding: 22px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <section class="hero">
+      <p class="eyebrow">Telegram File Gateway</p>
+      <h1>{{.FileName}}</h1>
+      <div class="meta">
+        <span class="pill">{{.FileSize}}</span>
+        <span class="pill">{{.MimeType}}</span>
+        <span class="pill">Uploaded by {{.UploadedBy}}</span>
+      </div>
+    </section>
+    <section class="content">
+      <div class="viewer">
+        {{if eq .PreviewKind "video"}}
+          <video controls preload="metadata" src="{{.StreamURL}}"></video>
+        {{else if eq .PreviewKind "audio"}}
+          <audio controls preload="metadata" src="{{.StreamURL}}"></audio>
+        {{else if eq .PreviewKind "image"}}
+          <img src="{{.StreamURL}}" alt="{{.FileName}}">
+        {{else}}
+          <div class="fallback">
+            Preview is not available for this file type.<br>
+            Use the download action below.
+          </div>
+        {{end}}
+      </div>
+      <div class="actions">
+        <a class="button button-primary" href="{{.DownloadURL}}">Download</a>
+        <a class="button button-secondary" href="{{.StreamURL}}">Open Inline</a>
+      </div>
+    </section>
+  </main>
+</body>
+</html>
