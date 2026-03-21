@@ -2,12 +2,15 @@ FROM golang:1.26.1-bookworm AS builder
 
 WORKDIR /src
 
+ARG TARGETOS=linux
+ARG TARGETARCH
+
 COPY go.mod go.sum ./
 RUN go mod download
 
 COPY . .
 
-RUN CGO_ENABLED=1 GOOS=linux GOARCH=amd64 go build -o /out/tg-file-url ./cmd/filetolink
+RUN CGO_ENABLED=1 GOOS="$TARGETOS" GOARCH="$TARGETARCH" go build -o /out/tg-file-url ./cmd/tg-file-url
 
 FROM debian:12-slim
 

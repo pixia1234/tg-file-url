@@ -48,13 +48,13 @@ LOG_PATH=data/tg-file-url.log
 
 ```bash
 go mod tidy
-go run ./cmd/filetolink
+go run ./cmd/tg-file-url
 ```
 
 ## Build
 
 ```bash
-go build -o tg-file-url ./cmd/filetolink
+go build -o tg-file-url ./cmd/tg-file-url
 ```
 
 ## Test
@@ -98,7 +98,7 @@ Important:
 ## Project Layout
 
 ```text
-cmd/filetolink          main program
+cmd/tg-file-url         main program
 internal/config         env parsing and runtime config
 internal/database       SQLite storage
 internal/telegram       Telegram Bot API client and bot logic
