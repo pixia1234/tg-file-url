@@ -35,18 +35,18 @@ jobs:
 
   build:
     name: Build ${{ matrix.goarch }}
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.runs_on }}
     needs: test
     strategy:
       fail-fast: false
       matrix:
         include:
           - goarch: amd64
-            cc: gcc
+            runs_on: ubuntu-24.04
             artifact_name: tg-file-url-linux-amd64
             output_name: tg-file-url-linux-amd64
           - goarch: arm64
-            cc: aarch64-linux-gnu-gcc
+            runs_on: ubuntu-24.04-arm
             artifact_name: tg-file-url-linux-arm64
             output_name: tg-file-url-linux-arm64
 
@@ -60,22 +60,15 @@ jobs:
           go-version-file: go.mod
           cache: true
 
-      - name: Install ARM64 cross compiler
-        if: matrix.goarch == 'arm64'
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y gcc-aarch64-linux-gnu
-
       - name: Download modules
         run: go mod download
 
       - name: Build binary
         env:
-          CC: ${{ matrix.cc }}
           GOARCH: ${{ matrix.goarch }}
         run: |
           mkdir -p dist
-          CGO_ENABLED=1 GOOS=linux GOARCH="$GOARCH" CC="$CC" go build -v -o "dist/${{ matrix.output_name }}" ./cmd/filetolink
+          CGO_ENABLED=1 GOOS=linux GOARCH="$GOARCH" go build -v -o "dist/${{ matrix.output_name }}" ./cmd/filetolink
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
@@ -102,8 +95,9 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1 || \
+          gh release view "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1 || \
             gh release create "$GITHUB_REF_NAME" \
+              --repo "$GITHUB_REPOSITORY" \
               --title "$GITHUB_REF_NAME" \
               --notes "Automated release for $GITHUB_REF_NAME"
-          gh release upload "$GITHUB_REF_NAME" dist/* --clobber
+          gh release upload "$GITHUB_REF_NAME" dist/* --clobber --repo "$GITHUB_REPOSITORY"
