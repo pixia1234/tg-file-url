@@ -282,6 +282,7 @@ type Message struct {
 	Date           int64       `json:"date"`
 	Chat           Chat        `json:"chat"`
 	From           *User       `json:"from"`
+	SenderChat     *Chat       `json:"sender_chat"`
 	Text           string      `json:"text"`
 	Caption        string      `json:"caption"`
 	ReplyToMessage *Message    `json:"reply_to_message"`

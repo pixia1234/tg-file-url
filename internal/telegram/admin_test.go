@@ -217,3 +217,37 @@ func TestCheckAccessAllowsOwnerWithoutAuthorization(t *testing.T) {
 		t.Fatalf("expected no denial messages, got %d", len(mock.Messages()))
 	}
 }
+
+func TestCheckAccessRejectsSenderChatWithoutUserIdentity(t *testing.T) {
+	bot, _, mock := newTestBot(t)
+
+	msg := &Message{
+		MessageID: 124,
+		Chat:      Chat{ID: -100987654321, Type: "supergroup", Title: "Group"},
+		SenderChat: &Chat{
+			ID:    -100987654321,
+			Type:  "supergroup",
+			Title: "Group",
+		},
+		Text: "/link",
+	}
+
+	allowed, err := bot.checkAccess(context.Background(), msg)
+	if err != nil {
+		t.Fatalf("checkAccess returned error: %v", err)
+	}
+	if allowed {
+		t.Fatal("expected sender_chat message to be rejected")
+	}
+
+	messages := mock.Messages()
+	if len(messages) != 1 {
+		t.Fatalf("expected 1 message, got %d", len(messages))
+	}
+	if messages[0].Text != unauthorizedIdentityText(msg) {
+		t.Fatalf("unexpected sender_chat denial text: %q", messages[0].Text)
+	}
+	if messages[0].ReplyParameters.MessageID != 124 {
+		t.Fatalf("unexpected reply message id: %d", messages[0].ReplyParameters.MessageID)
+	}
+}

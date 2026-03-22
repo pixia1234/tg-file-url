@@ -20,6 +20,16 @@ func (b *Bot) checkAccess(ctx context.Context, msg *Message) (bool, error) {
 		return false, nil
 	}
 
+	if msg.From == nil {
+		text := unauthorizedIdentityText(msg)
+		if text != "" {
+			if err := b.client.SendMessage(ctx, msg.Chat.ID, text, msg.MessageID); err != nil {
+				return false, err
+			}
+		}
+		return false, nil
+	}
+
 	if msg.From != nil && !b.cfg.IsOwner(msg.From.ID) {
 		ban, err := b.store.GetBannedUser(ctx, msg.From.ID)
 		switch {
@@ -78,6 +88,16 @@ func (b *Bot) checkAccess(ctx context.Context, msg *Message) (bool, error) {
 
 func unauthorizedUserText(userID int64) string {
 	return fmt.Sprintf("Please contact the administrator for authorization.\nYour ID is: %d", userID)
+}
+
+func unauthorizedIdentityText(msg *Message) string {
+	if msg == nil {
+		return ""
+	}
+	if msg.SenderChat != nil {
+		return "Please contact the administrator for authorization.\nAnonymous or sender chat identities are not supported."
+	}
+	return "Please contact the administrator for authorization."
 }
 
 func (b *Bot) handleAuthorize(ctx context.Context, msg *Message, args string) error {
