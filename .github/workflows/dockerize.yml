@@ -44,24 +44,31 @@ jobs:
         uses: docker/metadata-action@v5
         with:
           images: ${{ secrets.DOCKERHUB_USERNAME }}/tg-file-url
-          flavor: |
-            suffix=-${{ matrix.arch }},onlatest=true
-          tags: |
-            type=raw,value=latest,enable={{is_default_branch}}
-            type=sha,prefix=sha-,enable={{is_default_branch}}
-            type=ref,event=tag
 
       - name: Build and push
+        id: build
         uses: docker/build-push-action@v6
         with:
           context: .
           file: ./Dockerfile
-          push: true
           platforms: ${{ matrix.platform }}
-          tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+          outputs: type=image,name=${{ secrets.DOCKERHUB_USERNAME }}/tg-file-url,push-by-digest=true,name-canonical=true,push=true
           cache-from: type=gha,scope=docker-${{ matrix.arch }}
           cache-to: type=gha,mode=max,scope=docker-${{ matrix.arch }}
+
+      - name: Export image digest
+        run: |
+          mkdir -p "$RUNNER_TEMP/digests"
+          digest="${{ steps.build.outputs.digest }}"
+          touch "$RUNNER_TEMP/digests/${digest#sha256:}"
+
+      - name: Upload image digest
+        uses: actions/upload-artifact@v4
+        with:
+          name: digests-${{ matrix.arch }}
+          path: ${{ runner.temp }}/digests/*
+          if-no-files-found: error
 
   merge:
     name: Publish Multi-Arch Manifest
@@ -78,6 +85,13 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
+      - name: Download image digests
+        uses: actions/download-artifact@v4
+        with:
+          path: ${{ runner.temp }}/digests
+          pattern: digests-*
+          merge-multiple: true
+
       - name: Extract final Docker metadata
         id: meta
         uses: docker/metadata-action@v5
@@ -85,19 +99,29 @@ jobs:
           images: ${{ secrets.DOCKERHUB_USERNAME }}/tg-file-url
           tags: |
             type=raw,value=latest,enable={{is_default_branch}}
-            type=sha,prefix=sha-,enable={{is_default_branch}}
             type=ref,event=tag
 
       - name: Create multi-arch manifests
         env:
+          IMAGE_NAME: ${{ secrets.DOCKERHUB_USERNAME }}/tg-file-url
           TAGS: ${{ steps.meta.outputs.tags }}
         run: |
+          images=()
+          for digest_file in "$RUNNER_TEMP"/digests/*; do
+            [ -f "$digest_file" ] || continue
+            images+=("${IMAGE_NAME}@sha256:$(basename "$digest_file")")
+          done
+
+          if [ "${#images[@]}" -eq 0 ]; then
+            echo "No image digests were downloaded."
+            exit 1
+          fi
+
           while IFS= read -r tag; do
             [ -n "$tag" ] || continue
             docker buildx imagetools create \
               -t "$tag" \
-              "${tag}-amd64" \
-              "${tag}-arm64"
+              "${images[@]}"
           done <<< "$TAGS"
 
       - name: Inspect published manifests
