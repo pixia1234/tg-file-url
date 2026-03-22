@@ -60,7 +60,24 @@ func (b *Bot) checkAccess(ctx context.Context, msg *Message) (bool, error) {
 		}
 	}
 
+	if msg.From != nil && !b.cfg.IsOwner(msg.From.ID) {
+		authorized, err := b.store.IsUserAuthorized(ctx, msg.From.ID)
+		if err != nil {
+			return false, err
+		}
+		if !authorized {
+			if err := b.client.SendMessage(ctx, msg.Chat.ID, unauthorizedUserText(msg.From.ID), msg.MessageID); err != nil {
+				return false, err
+			}
+			return false, nil
+		}
+	}
+
 	return true, nil
+}
+
+func unauthorizedUserText(userID int64) string {
+	return fmt.Sprintf("Please contact the administrator for authorization.\nYour ID is: %d", userID)
 }
 
 func (b *Bot) handleAuthorize(ctx context.Context, msg *Message, args string) error {
